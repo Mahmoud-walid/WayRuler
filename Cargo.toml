@@ -1,0 +1,24 @@
+[package]
+name = "wayruler"
+version = "0.1.0"
+edition = "2021"
+description = "A Wayland-native smart screen measurement tool"
+
+[dependencies]
+gtk4 = "0.8"
+gtk4-layer-shell = "0.3"
+
+zbus = "4.0"
+ashpd = "0.8"
+
+image = "0.24"
+
+tokio = { version = "1.36", features = ["full"] }
+
+cairo-rs = "0.19"
+glib = "0.19"
+
+anyhow = "1.0"
+
+tempfile = "3"
+futures-util = "0.3"
