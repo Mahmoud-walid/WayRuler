@@ -1,6 +1,6 @@
 // src/edge_detector.rs
 
-use image::{Pixel, RgbaImage};
+use image::RgbaImage;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Axis {
@@ -17,7 +17,7 @@ impl EdgeEngine {
     pub fn new(screenshot: RgbaImage) -> Self {
         Self {
             screenshot,
-            threshold: 25, // Contrast threshold for edge detection
+            threshold: 8,
         }
     }
 
@@ -27,49 +27,63 @@ impl EdgeEngine {
         let mut edges_negative = Vec::new();
         let mut edges_positive = Vec::new();
 
-        let max_val = match axis { Axis::Horizontal => width, Axis::Vertical => height };
-        let mut last_luma = self.get_luma(start_x, start_y);
+        let max_val = match axis {
+            Axis::Horizontal => width,
+            Axis::Vertical => height,
+        };
+
+        let mut last_color = self.get_rgb(start_x, start_y);
 
         // Scan negative direction
-        let mut current = match axis { Axis::Horizontal => start_x, Axis::Vertical => start_y };
+        let mut current = match axis {
+            Axis::Horizontal => start_x,
+            Axis::Vertical => start_y,
+        };
         while current > 0 {
             current -= 1;
             let (x, y) = match axis {
                 Axis::Horizontal => (current, start_y),
                 Axis::Vertical => (start_x, current),
             };
-            let luma = self.get_luma(x, y);
-            if current_diff(luma, last_luma) > self.threshold {
+            let color = self.get_rgb(x, y);
+            if color_diff(color, last_color) > self.threshold {
                 edges_negative.push(current);
-                last_luma = luma;
+                last_color = color;
             }
         }
 
         // Scan positive direction
-        last_luma = self.get_luma(start_x, start_y);
-        current = match axis { Axis::Horizontal => start_x, Axis::Vertical => start_y };
+        last_color = self.get_rgb(start_x, start_y);
+        current = match axis {
+            Axis::Horizontal => start_x,
+            Axis::Vertical => start_y,
+        };
         while current < max_val - 1 {
             current += 1;
             let (x, y) = match axis {
                 Axis::Horizontal => (current, start_y),
                 Axis::Vertical => (start_x, current),
             };
-            let luma = self.get_luma(x, y);
-            if current_diff(luma, last_luma) > self.threshold {
+            let color = self.get_rgb(x, y);
+            if color_diff(color, last_color) > self.threshold {
                 edges_positive.push(current);
-                last_luma = luma;
+                last_color = color;
             }
         }
 
         (edges_negative, edges_positive)
     }
 
-    fn get_luma(&self, x: u32, y: u32) -> u8 {
-        let pixel = self.screenshot.get_pixel(x, y).channels();
-        ((pixel[0] as u32 * 299 + pixel[1] as u32 * 587 + pixel[2] as u32 * 114) / 1000) as u8
+    fn get_rgb(&self, x: u32, y: u32) -> [u8; 3] {
+        let pixel = self.screenshot.get_pixel(x, y).0; // .0 gives [u8; 4] array
+        [pixel[0], pixel[1], pixel[2]]
     }
 }
 
-fn current_diff(a: u8, b: u8) -> u8 {
-    if a > b { a - b } else { b - a }
+fn color_diff(c1: [u8; 3], c2: [u8; 3]) -> u8 {
+    let r_diff = c1[0].abs_diff(c2[0]);
+    let g_diff = c1[1].abs_diff(c2[1]);
+    let b_diff = c1[2].abs_diff(c2[2]);
+
+    r_diff.max(g_diff).max(b_diff)
 }
