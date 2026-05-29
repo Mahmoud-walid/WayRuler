@@ -37,7 +37,7 @@ A Wayland-native smart screen measurement tool for KDE Plasma. Measure distances
 
 ```bash
 # Clone the repository
-git clone https://github.com/Mahmoud-walid/linux-screen-ruler.git
+git clone https://github.com/Mahmoud-walid/WayRuler.git
 cd wayruler
 
 # Build the project
@@ -195,4 +195,4 @@ This project is licensed under the Apache License 2.0.
 
 ## Support
 
-For issues, questions, or suggestions, please open an issue on the [GitHub repository](https://github.com/Mahmoud-walid/linux-screen-ruler).
+For issues, questions, or suggestions, please open an issue on the [GitHub repository](https://github.com/Mahmoud-walid/WayRuler).
