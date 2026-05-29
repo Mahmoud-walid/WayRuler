@@ -1,35 +1,51 @@
 # PKGBUILD
 
 pkgname=wayruler-git
-pkgver=r1.1234567
+pkgver=r20.88c4cd5
 pkgrel=1
 pkgdesc="A native Wayland smart screen measurement tool for KDE Plasma (PowerToys Screen Ruler clone)"
 arch=('x86_64')
 url="https://github.com/Mahmoud-walid/WayRuler"
 license=('Apache')
-depends=('gtk4' 'gtk4-layer-shell' 'cairo' 'dbus' 'glibc')
+depends=('gtk4' 'gtk4-layer-shell' 'cairo' 'glibc' 'spectacle')
 makedepends=('cargo' 'git' 'rust')
 provides=('wayruler')
 conflicts=('wayruler')
 source=("git+https://github.com/Mahmoud-walid/WayRuler.git")
-md5sums=('SKIP')
+sha256sums=('SKIP')
 
 pkgver() {
-  cd "$srcdir/wayruler"
-  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  cd "$srcdir/WayRuler"
+
+  printf "r%s.%s" \
+    "$(git rev-list --count HEAD)" \
+    "$(git rev-parse --short HEAD)"
 }
 
 build() {
-  cd "$srcdir/wayruler"
-  export RUSTUP_TOOLCHAIN=stable
+  cd "$srcdir/WayRuler"
+
   export CARGO_TARGET_DIR=target
+
   cargo build --release --locked
 }
 
 package() {
-  cd "$srcdir/wayruler"
-  install -Dm 755 target/release/wayruler -t "$pkgdir/usr/bin"
-  
-  # Optional: Install desktop file for autostart
-  # install -Dm 644 wayruler.desktop -t "$pkgdir/usr/share/applications"
+  cd "$srcdir/WayRuler"
+
+  install -Dm755 \
+    target/release/wayruler \
+    "$pkgdir/usr/bin/wayruler"
+
+  install -Dm644 \
+    LICENSE \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+  install -Dm644 \
+    wayruler.desktop \
+    "$pkgdir/usr/share/applications/wayruler.desktop"
+
+  install -Dm644 \
+    assets/wayruler.png \
+    "$pkgdir/usr/share/pixmaps/wayruler.png"
 }
