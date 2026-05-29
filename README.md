@@ -3,7 +3,7 @@
 A Wayland-native smart screen measurement tool for KDE Plasma. Measure distances between UI elements, windows, and screen boundaries in real-time with intelligent edge detection.
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 ![Rust](https://img.shields.io/badge/rust-edition%202021-orange)
 
 ## Features
@@ -185,7 +185,7 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the Apache License 2.0.
 
 ## Acknowledgments
 
