@@ -193,10 +193,10 @@ pub fn build_ui(app: &Application, screenshot: image::RgbaImage) {
     toolbar.set_halign(gtk4::Align::Center);
     toolbar.set_valign(gtk4::Align::Start);
 
-    let btn_bounds = icon_button("src/assets/scan.svg");
-    let btn_cross = icon_button("src/assets/plus.svg");
-    let btn_horiz = icon_button("src/assets/move-horizontal.svg");
-    let btn_vert = icon_button("src/assets/move-vertical.svg");
+    let btn_bounds = icon_button("scan.svg");
+    let btn_cross = icon_button("plus.svg");
+    let btn_horiz = icon_button("move-horizontal.svg");
+    let btn_vert = icon_button("move-vertical.svg");
 
     btn_cross.set_group(Some(&btn_bounds));
     btn_horiz.set_group(Some(&btn_bounds));
@@ -234,7 +234,7 @@ pub fn build_ui(app: &Application, screenshot: image::RgbaImage) {
     setup_btn(&btn_horiz, Mode::Horizontal);
     setup_btn(&btn_vert, Mode::Vertical);
 
-    let btn_close = icon_plain_button("src/assets/x.svg");
+    let btn_close = icon_plain_button("x.svg");
     btn_close.add_css_class("close-btn");
     let win_clone = window.clone();
     btn_close.connect_clicked(move |_| {
