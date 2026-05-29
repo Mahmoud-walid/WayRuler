@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=WayRuler
+Comment=Wayland screen measurement tool
+Exec=wayruler
+Icon=wayruler
+Terminal=false
+Type=Application
+Categories=Utility;Graphics;
+Keywords=wayland;ruler;measure;overlay;
+StartupNotify=true
