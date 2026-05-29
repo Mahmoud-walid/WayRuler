@@ -5,13 +5,13 @@ pkgver=r1.1234567
 pkgrel=1
 pkgdesc="A native Wayland smart screen measurement tool for KDE Plasma (PowerToys Screen Ruler clone)"
 arch=('x86_64')
-url="https://github.com/yourname/wayruler"
+url="https://github.com/Mahmoud-walid/WayRuler"
 license=('GPL3')
 depends=('gtk4' 'gtk4-layer-shell' 'cairo' 'dbus' 'glibc')
 makedepends=('cargo' 'git' 'rust')
 provides=('wayruler')
 conflicts=('wayruler')
-source=("git+https://github.com/yourname/wayruler.git")
+source=("git+https://github.com/Mahmoud-walid/WayRuler.git")
 md5sums=('SKIP')
 
 pkgver() {
