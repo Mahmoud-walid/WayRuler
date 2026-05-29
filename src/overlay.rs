@@ -1,12 +1,16 @@
 // src/overlay.rs
 
+use crate::edge_detector::{Axis, EdgeEngine};
+use crate::utils::helpers::{icon_button, icon_plain_button};
 use gtk4::prelude::*;
-use gtk4::{Application, ApplicationWindow, DrawingArea, EventControllerMotion, EventControllerScroll, gdk};
+use gtk4::{
+    gdk, Application, ApplicationWindow, DrawingArea, EventControllerMotion, EventControllerScroll,
+};
+use gtk4::{gdk::Key, EventControllerKey};
 use gtk4_layer_shell::{Layer, LayerShell};
 use std::cell::RefCell;
-use std::rc::Rc;
 use std::path::PathBuf;
-use crate::edge_detector::{EdgeEngine, Axis};
+use std::rc::Rc;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Mode {
@@ -109,6 +113,7 @@ pub fn build_ui(app: &Application, screenshot: image::RgbaImage) {
     window.set_anchor(gtk4_layer_shell::Edge::Bottom, true);
     window.set_anchor(gtk4_layer_shell::Edge::Left, true);
     window.set_anchor(gtk4_layer_shell::Edge::Right, true);
+    let key_controller = EventControllerKey::new();
 
     let initial_mode = load_saved_mode();
 
@@ -118,6 +123,66 @@ pub fn build_ui(app: &Application, screenshot: image::RgbaImage) {
         skip_index: 0,
         mode: initial_mode,
     }));
+    let state_key = state.clone();
+    let win_key = window.clone();
+
+    let engine = Rc::new(EdgeEngine::new(screenshot));
+    let engine_key = engine.clone();
+
+    key_controller.connect_key_pressed(move |_, key, _, _| match key {
+        Key::Escape => {
+            win_key.close();
+            glib::Propagation::Stop
+        }
+
+        Key::Return | Key::KP_Enter => {
+            let s = state_key.borrow();
+
+            println!(
+                "Cursor: ({}, {}) | Skip Index: {}",
+                s.cursor_x, s.cursor_y, s.skip_index
+            );
+
+            let (neg_x, pos_x) =
+                engine_key.find_edges(s.cursor_x as u32, s.cursor_y as u32, Axis::Horizontal);
+
+            let (neg_y, pos_y) =
+                engine_key.find_edges(s.cursor_x as u32, s.cursor_y as u32, Axis::Vertical);
+
+            let left_edge = neg_x.get(s.skip_index).copied().unwrap_or(0) as f64;
+            let right_edge = pos_x.get(s.skip_index).copied().unwrap_or(0) as f64;
+
+            let top_edge = neg_y.get(s.skip_index).copied().unwrap_or(0) as f64;
+            let bottom_edge = pos_y.get(s.skip_index).copied().unwrap_or(0) as f64;
+
+            let text = match s.mode {
+                Mode::Bounds | Mode::Crosshair => format!(
+                    "{} x {}",
+                    (right_edge - left_edge) as i32,
+                    (bottom_edge - top_edge) as i32
+                ),
+
+                Mode::Horizontal => {
+                    format!("{}px", (right_edge - left_edge) as i32)
+                }
+
+                Mode::Vertical => {
+                    format!("{}px", (bottom_edge - top_edge) as i32)
+                }
+            };
+
+            if let Some(display) = gdk::Display::default() {
+                let clipboard = display.clipboard();
+                clipboard.set_text(&text);
+            }
+
+            win_key.close();
+
+            glib::Propagation::Stop
+        }
+
+        _ => glib::Propagation::Proceed,
+    });
 
     let overlay_container = gtk4::Overlay::new();
     let drawing_area = DrawingArea::new();
@@ -128,10 +193,10 @@ pub fn build_ui(app: &Application, screenshot: image::RgbaImage) {
     toolbar.set_halign(gtk4::Align::Center);
     toolbar.set_valign(gtk4::Align::Start);
 
-    let btn_bounds = gtk4::ToggleButton::with_label("⛶");
-    let btn_cross = gtk4::ToggleButton::with_label("┼");
-    let btn_horiz = gtk4::ToggleButton::with_label("⟷");
-    let btn_vert = gtk4::ToggleButton::with_label("↕");
+    let btn_bounds = icon_button("src/assets/scan.svg");
+    let btn_cross = icon_button("src/assets/plus.svg");
+    let btn_horiz = icon_button("src/assets/move-horizontal.svg");
+    let btn_vert = icon_button("src/assets/move-vertical.svg");
 
     btn_cross.set_group(Some(&btn_bounds));
     btn_horiz.set_group(Some(&btn_bounds));
@@ -169,7 +234,7 @@ pub fn build_ui(app: &Application, screenshot: image::RgbaImage) {
     setup_btn(&btn_horiz, Mode::Horizontal);
     setup_btn(&btn_vert, Mode::Vertical);
 
-    let btn_close = gtk4::Button::with_label("✕");
+    let btn_close = icon_plain_button("src/assets/x.svg");
     btn_close.add_css_class("close-btn");
     let win_clone = window.clone();
     btn_close.connect_clicked(move |_| {
@@ -185,13 +250,11 @@ pub fn build_ui(app: &Application, screenshot: image::RgbaImage) {
     separator.set_margin_top(5);
     separator.set_margin_bottom(5);
     toolbar.append(&separator);
-    
+
     toolbar.append(&btn_close);
 
     overlay_container.add_overlay(&toolbar);
     window.set_child(Some(&overlay_container));
-
-    let engine = Rc::new(EdgeEngine::new(screenshot));
 
     let motion = EventControllerMotion::new();
     let state_clone = state.clone();
@@ -210,7 +273,7 @@ pub fn build_ui(app: &Application, screenshot: image::RgbaImage) {
     scroll.connect_scroll(move |_, _dx, dy| {
         let mut s = state_scroll.borrow_mut();
         if dy > 0.0 {
-            s.skip_index += 1; 
+            s.skip_index += 1;
         } else if dy < 0.0 && s.skip_index > 0 {
             s.skip_index -= 1;
         }
@@ -244,17 +307,26 @@ pub fn build_ui(app: &Application, screenshot: image::RgbaImage) {
 
         match s.mode {
             Mode::Bounds => {
-                cr.rectangle(left_edge, top_edge, right_edge - left_edge, bottom_edge - top_edge);
-            },
+                cr.rectangle(
+                    left_edge,
+                    top_edge,
+                    right_edge - left_edge,
+                    bottom_edge - top_edge,
+                );
+            }
             Mode::Crosshair => {
-                cr.move_to(left_edge, cy); cr.line_to(right_edge, cy);
-                cr.move_to(cx, top_edge); cr.line_to(cx, bottom_edge);
-            },
+                cr.move_to(left_edge, cy);
+                cr.line_to(right_edge, cy);
+                cr.move_to(cx, top_edge);
+                cr.line_to(cx, bottom_edge);
+            }
             Mode::Horizontal => {
-                cr.move_to(left_edge, cy); cr.line_to(right_edge, cy);
-            },
+                cr.move_to(left_edge, cy);
+                cr.line_to(right_edge, cy);
+            }
             Mode::Vertical => {
-                cr.move_to(cx, top_edge); cr.line_to(cx, bottom_edge);
+                cr.move_to(cx, top_edge);
+                cr.line_to(cx, bottom_edge);
             }
         }
         cr.stroke().unwrap();
@@ -270,12 +342,17 @@ pub fn build_ui(app: &Application, screenshot: image::RgbaImage) {
         cr.move_to(cx + 25.0, cy + 32.0);
 
         let text = match s.mode {
-            Mode::Bounds | Mode::Crosshair => format!("X: {:.0}px | Y: {:.0}px", right_edge - left_edge, bottom_edge - top_edge),
+            Mode::Bounds | Mode::Crosshair => format!(
+                "X: {:.0}px | Y: {:.0}px",
+                right_edge - left_edge,
+                bottom_edge - top_edge
+            ),
             Mode::Horizontal => format!("Width: {:.0}px", right_edge - left_edge),
             Mode::Vertical => format!("Height: {:.0}px", bottom_edge - top_edge),
         };
         cr.show_text(&text).unwrap();
     });
 
+    window.add_controller(key_controller);
     window.present();
 }
